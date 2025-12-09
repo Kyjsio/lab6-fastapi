@@ -1,0 +1,34 @@
+name: Deploy with SHA Versioning
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # KROK KLUCZOWY: Budowanie i wysyłanie z dwoma tagami
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Tutaj definiujemy listę tagów:
+          # 1. :latest (żeby zawsze można było pobrać "najnowszy")
+          # 2. :sha (unikalny identyfikator tego konkretnego commita)
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/python-app:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/python-app:${{ github.sha }}
